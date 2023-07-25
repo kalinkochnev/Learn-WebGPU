@@ -1,10 +1,13 @@
 mod state;
+mod pipelines;
+mod vertex;
+mod linalg;
 
 use crate::state::State;
 use winit::{
     event::*,
     event_loop::{ControlFlow, EventLoop},
-    window::{WindowBuilder},
+    window::WindowBuilder,
 };
 
 pub async fn run() {
@@ -13,13 +16,14 @@ pub async fn run() {
     let window = WindowBuilder::new().build(&event_loop).unwrap();
 
     let mut state = State::new(window).await;
-    event_loop.run(move |event, _, control_flow| { 
-        let same_window = | window_id | window_id == state.window.id();
+    event_loop.run(move |event, _, control_flow| {
+        let app_window = state.window.id().clone();
+        let same_window = | window_id | window_id == app_window;
         match event {
             Event::WindowEvent {
                 ref event,
                 window_id,
-            } if same_window(window_id) => {
+            } if same_window(window_id) && !state.input(event) => {
                 match event {
                     WindowEvent::CloseRequested
                         | WindowEvent::KeyboardInput {
@@ -31,17 +35,13 @@ pub async fn run() {
                                 },
                                 ..
                         } => *control_flow = ControlFlow::Exit,
-                    WindowEvent::Resized(physical_size) => {
-                        state.resize(*physical_size);
-                    }
-                    WindowEvent::ScaleFactorChanged { scale_factor, new_inner_size } => {
-                        // new_inner_size is &&mut
-                        state.resize(**new_inner_size)
-                    }
+                    WindowEvent::Resized(physical_size) => state.resize(*physical_size),
+                    // new_inner_size is &&mut
+                    WindowEvent::ScaleFactorChanged { new_inner_size, .. } => state.resize(**new_inner_size),
                     _ => {}
                 }
             },
-            Event::RedrawRequested(window_id) if same_window(window_id) => { 
+            Event::RedrawRequested(window_id) if same_window(window_id) => {
                 state.update();
 
                 match state.render() {
@@ -53,7 +53,10 @@ pub async fn run() {
                     // All other errors (Outdated, Timeout) should be resolved by the next frame
                     Err(e) => eprintln!("{:?}", e),
                 }
-            }
+            },
+            Event::MainEventsCleared => {
+                state.window.request_redraw();
+            },
             _ => {}
         }
     });

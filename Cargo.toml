@@ -13,7 +13,7 @@ futures = "0.3.28" # rust futures feature
 anyhow = "1.0.71" # errors with context
 pollster = "0.3.0" # minimal future evaluation that blocks thread until future completion
 log = "0.4.19" # logging library for rust
-env_logger = "0.10.0" # implementation of logging to 
-bytemuck = "1.13.1" # perform bit cast operations between datatypes
+env_logger = "0.10.0" # implementation of logging to
+bytemuck = { version="1.13.1", features = ["derive"] } # perform bit cast operations between datatypes
 image = "0.24.6" # filters and decoders for image formats
 rand = "0.8.5"
