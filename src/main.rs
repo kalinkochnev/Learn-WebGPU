@@ -2,6 +2,7 @@ mod state;
 mod pipelines;
 mod vertex;
 mod linalg;
+mod num;
 
 use crate::state::State;
 use winit::{

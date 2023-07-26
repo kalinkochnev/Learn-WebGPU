@@ -17,3 +17,4 @@ env_logger = "0.10.0" # implementation of logging to
 bytemuck = { version="1.13.1", features = ["derive"] } # perform bit cast operations between datatypes
 image = "0.24.6" # filters and decoders for image formats
 rand = "0.8.5"
+num = "0.4.1"
