@@ -2,8 +2,9 @@ use std::collections::HashMap;
 
 use wgpu::util::DeviceExt;
 use winit::{window::Window, event::WindowEvent};
-use crate::vertex::{VERTICES, INDICES};
+use crate::animation::AnimationState;
 use crate::pipelines;
+use crate::vertex::Vertex;
 
 #[derive(PartialEq, Eq, Hash)]
 pub enum PipelineMode {
@@ -18,11 +19,12 @@ pub struct State {
     pub config: wgpu::SurfaceConfiguration,
     pub size: winit::dpi::PhysicalSize<u32>,
     pub mode: PipelineMode,
+    animation: AnimationState,
+    pub render_time: u128,
     color: wgpu::Color,
     pipelines: HashMap<PipelineMode, wgpu::RenderPipeline>,
     vertex_buffer: wgpu::Buffer,
     index_buffer: wgpu::Buffer,
-    num_indices: u32,
     pub window: Window,
 }
 
@@ -92,25 +94,26 @@ impl State {
             a: 1.0,
         };
 
+        // Initialize the animation state
+        let animation = AnimationState::new();
+
         // Initialize the vertex buffer
         let vertex_buffer = device.create_buffer_init(
             &wgpu::util::BufferInitDescriptor {
                 label: Some("Vertex Buffer"),
-                contents: bytemuck::cast_slice(VERTICES),
-                usage: wgpu::BufferUsages::VERTEX
+                contents: bytemuck::cast_slice(&animation.vertices),
+                usage: wgpu::BufferUsages::VERTEX | wgpu::BufferUsages::COPY_DST
             }
-            );
+        );
 
         // Initialize the index buffer
         let index_buffer = device.create_buffer_init(
             &wgpu::util::BufferInitDescriptor {
                 label: Some("Index Buffer"),
-                contents: bytemuck::cast_slice(INDICES),
+                contents: bytemuck::cast_slice(&animation.indices),
                 usage: wgpu::BufferUsages::INDEX
             }
         );
-
-        let num_indices = INDICES.len() as u32;
 
         // Initialize the piplelines that can be switched between
         let mut pipelines = HashMap::<PipelineMode, wgpu::RenderPipeline>::new();
@@ -126,7 +129,8 @@ impl State {
             queue,
             vertex_buffer,
             index_buffer,
-            num_indices,
+            render_time: 0,
+            animation,
             mode: PipelineMode::Solid,
             pipelines,
             color,
@@ -171,7 +175,12 @@ impl State {
     }
 
     pub fn update(&mut self) {
-        // TODO
+        self.animation.rotating_pentagon(self.render_time);
+        self.queue.write_buffer(
+            &self.vertex_buffer, 
+            0 as wgpu::BufferAddress, 
+            bytemuck::cast_slice(&self.animation.vertices)
+        );
     }
 
     pub fn render(&mut self) -> Result<(), wgpu::SurfaceError> {
@@ -219,7 +228,7 @@ impl State {
         render_pass.set_pipeline(self.pipelines.get(&self.mode).unwrap());
         render_pass.set_vertex_buffer(0, self.vertex_buffer.slice(..));
         render_pass.set_index_buffer(self.index_buffer.slice(..), wgpu::IndexFormat::Uint16);
-        render_pass.draw_indexed(0..self.num_indices, 0, 0..1);
+        render_pass.draw_indexed(0..self.animation.indices.len() as u32, 0, 0..1);
 
         // Draw something with N vertices and 1 instance
         // In WGSL, this is stored as @builtin(vertex_index)

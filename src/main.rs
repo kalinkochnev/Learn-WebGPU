@@ -4,6 +4,9 @@ mod vertex;
 mod linalg;
 mod num;
 mod transform;
+mod animation;
+
+use std::time::{SystemTime, UNIX_EPOCH};
 
 use crate::state::State;
 use winit::{
@@ -45,7 +48,7 @@ pub async fn run() {
             },
             Event::RedrawRequested(window_id) if same_window(window_id) => {
                 state.update();
-
+                let start = SystemTime::now().duration_since(UNIX_EPOCH).unwrap().as_nanos();
                 match state.render() {
                     Ok(_) => {}
                     // Reconfigure if the surface is lost
@@ -55,6 +58,8 @@ pub async fn run() {
                     // All other errors (Outdated, Timeout) should be resolved by the next frame
                     Err(e) => eprintln!("{:?}", e),
                 }
+                let end = SystemTime::now().duration_since(UNIX_EPOCH).unwrap().as_nanos();
+                state.render_time = end - start;
             },
             Event::MainEventsCleared => {
                 state.window.request_redraw();
