@@ -1,5 +1,5 @@
 
-use std::ops::{Mul, AddAssign, MulAssign};
+use std::ops::{Mul, AddAssign, MulAssign, Add};
 
 use num::Num;
 
@@ -18,7 +18,7 @@ pub fn dot_prod<T: Num + Copy>(a: &[T], b: &[T]) -> T {
 
 /// Constant generic parameter (R,C) represent the rows and columns
 #[derive(Copy, Clone, PartialEq, Debug)]
-struct SMatrix<T, const ROWS: usize, const COLS: usize> {
+pub struct SMatrix<T, const ROWS: usize, const COLS: usize> {
     entries: [[T; COLS]; ROWS]
 }
 impl<T, const ROWS: usize, const COLS: usize> SMatrix<T, ROWS, COLS> where T: Num + Copy  + Clone{
@@ -30,7 +30,6 @@ impl<T, const ROWS: usize, const COLS: usize> SMatrix<T, ROWS, COLS> where T: Nu
     pub fn zero() -> Self {
         Self::new([[T::zero(); COLS]; ROWS])
     }
-
 
     pub fn shape(&self) -> (usize, usize) {
         return (ROWS, COLS)
@@ -121,25 +120,24 @@ where T: Num + Copy + AddAssign
    }
 }
 
-/// Implementinddg scalar multiplication commutatively
+/// Implementing scalar multiplication commutatively
 impl<T, const ROWS: usize, const COLS: usize> Mul<Scalar<T>> for SMatrix<T, ROWS, COLS>
     where T: Num + Copy + Clone + MulAssign
 {
     type Output = SMatrix<T, ROWS, COLS>;
 
-    fn mul(self, rhs: Scalar<T>) -> Self::Output {
-        let mut result = self.clone();
+    fn mul(mut self, rhs: Scalar<T>) -> Self::Output {
         for r in 0..ROWS {
             for c in 0..COLS {
-                result.entries[r][c] *= rhs.0;
+                self.entries[r][c] *= rhs.0;
             }
         }
 
-        result
+        self
     }
 }
 
-/// Scalar multyyiplication is commutative
+/// Scalar multiplication is commutative
 impl<T, const ROWS: usize, const COLS: usize> Mul<SMatrix<T, ROWS, COLS>> for Scalar<T>
     where T: Num + Copy + Clone + MulAssign
 {
@@ -147,6 +145,24 @@ impl<T, const ROWS: usize, const COLS: usize> Mul<SMatrix<T, ROWS, COLS>> for Sc
 
     fn mul(self, rhs: SMatrix<T, ROWS, COLS>) -> Self::Output {
         rhs * self 
+    }
+}
+
+
+/// For matrices of same size, addition is defined
+impl<T, const ROWS: usize, const COLS: usize> Add<SMatrix<T, ROWS, COLS>> for SMatrix<T, ROWS, COLS>
+    where T: AddAssign + Copy
+{
+    type Output = SMatrix<T, ROWS, COLS>;
+
+    fn add(mut self, rhs: SMatrix<T, ROWS, COLS>) -> Self::Output {
+       for r in 0..ROWS {
+           for c in 0..COLS {
+                self.entries[r][c] += rhs.entries[r][c];
+           }
+       } 
+
+       self
     }
 }
 
