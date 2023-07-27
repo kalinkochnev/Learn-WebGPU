@@ -3,6 +3,7 @@ mod pipelines;
 mod vertex;
 mod linalg;
 mod num;
+mod transform;
 
 use crate::state::State;
 use winit::{

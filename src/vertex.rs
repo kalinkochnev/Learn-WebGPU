@@ -1,5 +1,7 @@
 use bytemuck;
 
+use crate::linalg::SMatrix;
+
 /// bytemuck::Pod means that the struct is "Plain Old Data" and is interpretable
 /// as &[u8]
 /// bytemuck::Zeroable means that struct attributes can be set to 0 (references
@@ -39,7 +41,15 @@ impl Vertex {
         //     ]
         }
     }
+
+    pub fn from_vector(vec: SMatrix<f32, 3, 1>, color: [f32; 3]) -> Vertex {
+        Vertex {
+            position: vec.col(0).unwrap(),
+            color
+        }
+    }
 }
+
 
 pub const VERTICES: &[Vertex] = &[
     Vertex { position: [-0.0868241, 0.49240386, 0.0], color: [0.5, 0.0, 0.5] }, // A
